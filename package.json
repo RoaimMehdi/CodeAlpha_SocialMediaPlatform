@@ -1,0 +1,12 @@
+{
+  "name": "codealpha_socialmediaplatform",
+  "version": "1.0.0",
+  "description": "This repository contains a basic social‑media stack backed by **Django** and a **MySQL** database.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

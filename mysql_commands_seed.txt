@@ -1,0 +1,55 @@
+-- ============================================================
+-- MySQL Commands for Connectly Seed Data
+-- ============================================================
+
+-- Step 1: Create Database
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS connectly_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+-- Step 2: Use the database & inspect tables
+mysql -u root connectly_db < mysql_setup_seed.sql
+
+-- Step 3: Verify database creation
+mysql -u root -e "SHOW DATABASES LIKE 'connectly_db';"
+
+-- Step 4: Verify tables are created
+mysql -u root connectly_db -e "SHOW TABLES;"
+
+-- Step 5: Run database migrations & seed command
+python manage.py migrate
+python manage.py seed_data
+
+-- Step 6: Verify seed data via Django Shell
+python manage.py shell -c "
+from django.contrib.auth import get_user_model
+from core.models import Post, Comment, Follow, Like, Profile
+
+User = get_user_model()
+user_count = User.objects.count()
+post_count = Post.objects.count()
+comment_count = Comment.objects.count()
+like_count = Like.objects.count()
+follow_count = Follow.objects.count()
+
+print('=== Seed Data Summary ===')
+print(f'Users:    {user_count}')
+print(f'Posts:    {post_count}')
+print(f'Comments: {comment_count}')
+print(f'Likes:    {like_count}')
+print(f'Follows:  {follow_count}')
+
+print('\n=== Login Credentials ===')
+usernames = ['ali_khan', 'sara_ahmed', 'usman_dev', 'ayesha_k',
+             'hamza_codes', 'zainab_art', 'bilal_travels', 'fatima_foodie']
+for username in usernames:
+    try:
+        user = User.objects.get(username=username)
+        print(f'  {username}: Demo@1234')
+    except:
+        print(f'  {username}: NOT FOUND')
+print('  admin: admin123')
+"
+
+-- Step 7: Test a quick API call
+curl -X POST http://127.0.0.1:8008/api/auth/login/ \
+  -H "Content-Type: application/json" \
+  -d "{\"username\": \"ali_khan\", \"password\": \"Demo@1234\"}"

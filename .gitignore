@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Django migrations
+core/migrations/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+db.sqlite3
+
+# Django
+*.pot
+*.po
+messages.py
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Static files (collected)
+staticfiles/
+
+# React build
+/build
+
+# Docker
+.dockerignore
+
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+
+# OS
+.DS_Store
