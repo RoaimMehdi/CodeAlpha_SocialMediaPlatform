@@ -317,16 +317,16 @@
 <script>
 /* ============ CONFIG: Auto-detects Django server (port 8008 / 8000) ============ */
 const getApiBases = () => {
-  const currentOrigin = (window.location.protocol.startsWith('http') && window.location.port) 
-    ? window.location.origin + '/api' 
-    : null;
-  return [
-    currentOrigin,
-    'http://127.0.0.1:8008/api',
-    'http://127.0.0.1:8000/api',
-    'http://localhost:8008/api',
-    'http://localhost:8000/api'
-  ].filter(Boolean);
+  const bases = [];
+  // Same origin first (works when the page is served by Django itself)
+  if (window.location.protocol.startsWith('http')) bases.push(window.location.origin + '/api');
+  ['8008', '8000'].forEach((port) => {
+    ['127.0.0.1', 'localhost'].forEach((host) => {
+      const base = `http://${host}:${port}/api`;
+      if (!bases.includes(base)) bases.push(base);
+    });
+  });
+  return bases;
 };
 
 const CONFIG = {
@@ -430,7 +430,7 @@ let verifiedApiBase = null;
 
 async function post(path, body) {
   const candidateBases = verifiedApiBase ? [verifiedApiBase] : getApiBases();
-  let lastError = null;
+  let lastStatus = null, lastBase = null, lastPath = path;
 
   for (const base of candidateBases) {
     const pathsToTry = [path];
@@ -438,37 +438,50 @@ async function post(path, body) {
     if (path === '/register/') pathsToTry.push('/auth/register/');
 
     for (const p of pathsToTry) {
+      let res;
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 4000);
-        const res = await fetch(base + p, {
+        res = await fetch(base + p, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
           signal: controller.signal
         });
         clearTimeout(timeoutId);
-
-        let data = null;
-        try { data = await res.json(); } catch (e) {}
-
-        if (res.ok) {
-          verifiedApiBase = base;
-          return data;
-        } else if (res.status === 400 || res.status === 401) {
-          verifiedApiBase = base;
-          throw new Error(readError(data, res.status));
-        }
       } catch (err) {
-        if (err.message && (err.message.includes("Incorrect") || err.message.includes("already") || err.message.includes("valid"))) {
-          throw err;
-        }
-        lastError = err;
+        continue; // network error / timeout -> try the next candidate base
+      }
+
+      lastStatus = res.status;
+      lastBase = base;
+      lastPath = p;
+
+      let data = null;
+      try { data = await res.json(); } catch (e) {}
+
+      if (res.ok) {
+        verifiedApiBase = base;
+        return data;
+      }
+      // A real backend answer: credentials or validation problem
+      if (res.status === 400 || res.status === 401) {
+        verifiedApiBase = base;
+        throw new Error(readError(data, res.status));
       }
     }
   }
 
-  throw new Error("Cannot reach Django backend (checked ports 8008 & 8000). Please ensure Django server is running.");
+  // Some server answered, but not with this API -> say that instead of "unreachable"
+  if (lastStatus) {
+    const origin = lastBase.replace(/\/api\/?$/, '');
+    verifiedApiBase = null;
+    throw new Error(`Port ${new URL(origin).port} is answering, but ${lastPath} returned HTTP ${lastStatus}. ` +
+      `That port may belong to another project - start this Django app with: python manage.py runserver 8008`);
+  }
+
+  verifiedApiBase = null;
+  throw new Error("Cannot reach the Django backend on ports 8008 or 8000. Start it with: python manage.py runserver 8008");
 }
 
 async function login(user, pass) {

@@ -51,10 +51,17 @@ Copy `.env.example` to `.env` and fill in your own values (database name, user, 
 ```bash
 python manage.py migrate
 python manage.py createsuperuser
-python manage.py runserver
+python manage.py runserver 8008
 ```
 
-Open http://127.0.0.1:8000 in your browser.
+Open http://127.0.0.1:8008/login/ in your browser.
+
+The app runs on **port 8008** because port 8000 is very often already taken by another
+project, which makes the frontend show *"Cannot reach Django backend"*. The frontend
+auto-detects the API on ports 8008 and 8000, but the Django server itself must be running.
+
+On Windows you can skip the manual steps and just double-click **`start.bat`**, which
+creates the virtualenv if needed, applies migrations and starts the server on 8008.
 
 ## Quickstart with Docker (optional)
 
@@ -63,6 +70,9 @@ docker-compose up --build
 docker-compose exec web python manage.py migrate
 docker-compose exec web python manage.py createsuperuser
 ```
+
+The Docker setup publishes the app on port 8000, so stop any other service using that
+port first (or change the `ports` mapping in `docker-compose.yml`).
 
 ## API Endpoints
 
@@ -94,7 +104,14 @@ static/             # CSS and JavaScript
 
 ## Screenshots
 
-*Add 2 to 3 screenshots here (home feed, profile page, MySQL tables).*
+### Home Feed
+![Home Feed](screenshot/home.png)
+
+### Profile Page
+![Profile Page](screenshot/profile.png)
+
+### MySQL Database
+![MySQL Tables](screenshot/database.png)
 
 ## Demo Video
 
@@ -102,6 +119,7 @@ static/             # CSS and JavaScript
 
 ## Author
 
-- **Name:** Your Name
-- **Student ID:** Your Student ID
+- **Name:** Roaim Mehdi
+- **Student ID:** CA/DF1/322965
 - **Internship:** CodeAlpha
+- **GitHub:** [RoaimMehdi](https://github.com/RoaimMehdi)
